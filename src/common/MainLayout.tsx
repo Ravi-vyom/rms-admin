@@ -194,18 +194,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                       cancelButtonColor: '#d33',
                       confirmButtonText: 'Yes, logout',
                       cancelButtonText: 'Cancel'
-                    }).then((result) => {
+                    }).then(async (result) => {
                       if (result.isConfirmed) {
                         Cookies.remove("token")
-                        Swal.fire({
+                        await Swal.fire({
                           title: 'Logged out!',
                           text: 'You have been successfully logged out.',
                           icon: 'success',
                           timer: 2000,
                           showConfirmButton: false
-                        }).then(() => {
-                          router.push("/login")
-                        });
+                        })
+                        await router.push("/login")
+
                       }
                     });
                   }
@@ -285,6 +285,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
         </div>
       </Box>
-    </Box>
+    </Box >
   );
 }

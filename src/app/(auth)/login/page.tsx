@@ -62,12 +62,15 @@ export default function Page() {
         try {
             handleLoadingON()
             const response = await loginAdmin(data)
-            if (response?.data?.status === true) {
+            if (response?.data?.status === true && response?.data?.data?.role === "ADMIN") {
                 handleLoadingOFF()
                 // localStorage.setItem("token", response?.data?.token)
                 Cookies.set('token', response?.data?.token)
                 showSuccess(response?.data?.message)
                 router.push("/")
+            } else {
+                showError('Login restricted to admin accounts only.');
+                router.push("/login")
             }
         } catch (err: any) {
             handleLoadingOFF()
