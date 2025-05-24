@@ -70,7 +70,9 @@ export default function Page() {
                 router.push("/")
             } else {
                 showError('Login restricted to admin accounts only.');
+                handleLoadingOFF()
                 router.push("/login")
+
             }
         } catch (err: any) {
             handleLoadingOFF()
