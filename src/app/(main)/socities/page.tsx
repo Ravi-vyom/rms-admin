@@ -5,13 +5,15 @@ import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CommonDialog from "@/common/CommonDialog";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { listOfSocieties } from "./actions";
 
 const columns: GridColDef[] = [
-  { field: 'Name', headerName: 'Name' },
-  { field: 'Address', headerName: 'Address', flex: 1 },
+  { field: 'name', headerName: 'Name', width: 170, },
+  { field: 'address', headerName: 'Address', flex: 1 },
 
   {
     field: 'Actions', headerName: 'Action',
@@ -29,17 +31,7 @@ const columns: GridColDef[] = [
   },
 
 ];
-const rows = [
-  { id: 1, Address: 'Snow', Name: 'Jon', age: 35 },
-  { id: 2, Address: 'Lannister', Name: 'Cersei', age: 42 },
-  { id: 3, Address: 'Lannister', Name: 'Jaime', age: 45 },
-  { id: 4, Address: 'Stark', Name: 'Arya', age: 16 },
-  { id: 5, Address: 'Targaryen', Name: 'Daenerys', age: null },
-  { id: 6, Address: 'Melisandre', Name: null, age: 150 },
-  { id: 7, Address: 'Clifford', Name: 'Ferrara', age: 44 },
-  { id: 8, Address: 'Frances', Name: 'Rossini', age: 36 },
-  { id: 9, Address: 'Roxie', Name: 'Harvey', age: 65 },
-];
+
 const paginationModel = { page: 0, pageSize: 5 };
 
 export default function Socity() {
@@ -50,12 +42,23 @@ export default function Socity() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
       Name: "",
       Address: "",
+      Authorities: [
+        {
+          user: ""
+        }
+      ]
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "Authorities"
   });
 
   const onSubmit = (data: any) => {
@@ -63,6 +66,13 @@ export default function Socity() {
     setOpen(false);
     reset(); // clear the form
   };
+
+  const lstSocieties = useQuery({
+    queryKey: ["LstSocieties"],
+    queryFn: async () => await listOfSocieties()
+  })
+
+  console.log(lstSocieties?.data?.data?.data)
 
   return (
     <div>
@@ -84,14 +94,15 @@ export default function Socity() {
             <DataGrid
               disableColumnFilter
               rowSelection={false}
-              rows={rows}
+              rows={lstSocieties?.data?.data?.data}
               columns={columns}
               initialState={{ pagination: { paginationModel } }}
               pageSizeOptions={[5, 10]}
               checkboxSelection={false}
               onRowClick={(params) => {
-                router.push(`/building/${params.row.id}`);
+                router.push(`/building/${params.row._id}`);
               }}
+              getRowId={(row) => row._id}
               sx={{
                 border: 0, width: "100%", height: "100%",
                 '& .MuiDataGrid-columnHeaders': {
@@ -119,6 +130,23 @@ export default function Socity() {
                   error={!!errors.Name}
                   helperText={errors.Name?.message}
                 />
+              </Grid>
+              <Grid size={{ xs: 6, md: 12 }}>
+                {fields.map((field, index) => (
+                  <Box key={field.id} sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                    <TextField
+                      label={`User ID #${index + 1}`}
+                      fullWidth
+                      {...register(`Authorities.${index}.user`, { required: "User ID is required" })}
+                      error={!!errors?.Authorities?.[index]?.user}
+                      helperText={errors?.Authorities?.[index]?.user?.message}
+                    />
+                    <IconButton color="error" onClick={() => remove(index)}><DeleteIcon /></IconButton>
+                  </Box>
+                ))}
+                <Button onClick={() => append({ user: "" })} variant="outlined" sx={{ mt: 1 }}>
+                  Add Authority
+                </Button>
               </Grid>
               <Grid size={{ xs: 6, md: 12 }}>
                 <TextField
