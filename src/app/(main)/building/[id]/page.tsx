@@ -50,7 +50,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const [objBuilding, setBuilding] = useState<any>()
     const router = useRouter()
     const { id } = use(params);
-    console.log(id)
     const {
         register,
         handleSubmit,

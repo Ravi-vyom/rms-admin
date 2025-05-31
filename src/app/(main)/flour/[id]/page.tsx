@@ -43,7 +43,6 @@ const rows = [
 const paginationModel = { page: 0, pageSize: 5 };
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    console.log(id)
     const router = useRouter()
     const [open, setOpen] = useState(false);
 

@@ -92,6 +92,7 @@ export default function Socity() {
     register,
     handleSubmit,
     reset,
+    watch,
     control,
 
     formState: { errors },
@@ -99,7 +100,9 @@ export default function Socity() {
     defaultValues: {
       Name: "",
       Address: "",
-      Authorities: []
+      Authorities: objSociety?.authorities?.map((a: any) => ({
+        user: a.user.name || a?.user._id // Support both formats
+      })) || [],
     },
   });
 
@@ -151,15 +154,14 @@ export default function Socity() {
     if (objSociety && isEdit) {
       reset({
         Name: objSociety?.name,
-        Authorities: objSociety?.authorities?.map((u: any) => ({
-          user: u.user || u._id
+        Authorities: objSociety?.authorities?.map((a: any) => ({
+          user: a.user._id,
         })) || [],
         Address: objSociety?.address,
 
       })
     }
   }, [objSociety, isEdit, reset])
-
 
   return (
     <div>
@@ -228,17 +230,21 @@ export default function Socity() {
                   }}
                   render={({ field }) => {
                     const userList: { _id: string; name: string }[] = lstUser?.data?.data?.data || [];
+                    const selectedUsers = field.value?.length
+                      ? userList.filter(user =>
+                        field.value.some((auth: { user: string }) => auth.user === user._id)
+                      )
+                      : [];
                     return (
                       <Autocomplete
                         multiple
                         options={userList}
+                        defaultValue={objSociety?.authorities?.map((a: any) => ({
+                          user: a.user.name || a.user._id // Support both formats
+                        })) || []}
                         getOptionLabel={(option) => option.name}
                         value={
-                          field.value?.length
-                            ? userList.filter((user) =>
-                              field.value.some((auth: { user: string }) => auth.user === user._id)
-                            )
-                            : []
+                          selectedUsers
                         }
                         onChange={(_, selectedUsers: { _id: string; name: string }[]) => {
                           const mapped = selectedUsers.map((user) => ({ user: user._id }));
@@ -249,8 +255,8 @@ export default function Socity() {
                           <TextField
                             {...params}
                             label="Authorities"
-                            error={!!errors.Authorities}
-                            helperText={errors.Authorities?.message}
+                            error={!!errors?.Authorities}
+                            helperText={errors?.Authorities?.message?.toString()}
                           />
                         )}
                       />
