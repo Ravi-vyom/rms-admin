@@ -1,6 +1,6 @@
 "use client"
 import TitleWithButton from "@/common/TitleWithButton";
-import { Box, Button, FormControl, FormHelperText, Grid, IconButton, InputLabel, MenuItem, Paper, Select, TextField } from "@mui/material";
+import { Box, Button, Chip, FormControl, FormHelperText, Grid, IconButton, InputLabel, MenuItem, Paper, Select, Stack, TextField } from "@mui/material";
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
@@ -8,11 +8,24 @@ import CommonDialog from "@/common/CommonDialog";
 import { Controller, useForm } from "react-hook-form";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { addBuilding, editBuilding, listOfBuilding } from "../actions";
+import { listOfSocieties } from "../../socities/actions";
+import { showError, showSuccess } from "@/components/utils/toast";
 
 const columns: GridColDef[] = [
-    { field: 'Name', headerName: 'Name' },
-    { field: 'Socity', headerName: 'Socity' },
-    { field: 'Address', headerName: 'Address', flex: 1 },
+    { field: 'heaight', headerName: 'Heaight', renderCell: ({ row }) => row?.heaight?.name },
+    { field: 'buildingName', headerName: 'Building Name', width: 160 },
+    {
+        field: 'authorities',
+        headerName: 'Authorities',
+        flex: 1,
+        renderCell: ({ row }) => (
+            row?.heaight?.authorities?.map((auth: any, index: number) => (
+                <Chip key={index} label={auth?.user?.name} size="small" color="primary" />
+            ))
+        )
+    },
     {
         field: 'Actions', headerName: 'Action',
         renderCell: ({ row }) => (
@@ -29,18 +42,13 @@ const columns: GridColDef[] = [
     },
 
 ];
-const rows = [
-    { id: 1, Address: 'Snow', Name: 'Jon', Socity: "Madhuram" },
-    { id: 2, Address: 'Lannister', Name: 'Cersei', Socity: "sahajanand" },
-    { id: 3, Address: 'Stark', Name: 'Arya', Socity: "Rajiv Gandhi" },
-    { id: 4, Address: 'Baratheon', Name: 'Tyrion', Socity: "Gandhi" },
-    { id: 5, Address: 'Greyjoy', Name: 'Arya', Socity: "Rajiv Gandhi" },
-    { id: 6, Address: 'Targaryen', Name: 'Daenerys', Socity: "Rajiv Gandhi" },
-];
+
 const paginationModel = { page: 0, pageSize: 5 };
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const [open, setOpen] = useState(false);
+    const [isEdit, setIsEdit] = useState(false)
+    const [objBuilding, setBuilding] = useState<any>()
     const router = useRouter()
     const { id } = use(params);
     console.log(id)
@@ -53,15 +61,44 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     } = useForm({
         defaultValues: {
             Name: "",
-            Address: "",
-            Socity: "",
         },
     });
 
-    const onSubmit = (data: any) => {
-        console.log("Form submitted:", data);
-        setOpen(false);
-        reset(); // clear the form
+    const lstBilding = useQuery({
+        queryKey: ["LstBuilding"],
+        queryFn: async () => await listOfBuilding()
+    })
+
+    const onSubmit = async (data: any) => {
+        try {
+            if (isEdit && objBuilding?._id) {
+                const response = await editBuilding(objBuilding?._id, {
+                    buildingName: data.Name,
+                    heaight: id
+                })
+                if (response.data.status === true) {
+                    showSuccess(response?.data?.message)
+                    lstBilding.refetch()
+                    setOpen(false)
+                    reset()
+                }
+
+            } else {
+                const response = await addBuilding({
+                    buildingName: data.Name,
+                    heaight: id
+                })
+                if (response.data.status === true) {
+                    showSuccess(response?.data?.message)
+                    lstBilding.refetch()
+                    setOpen(false)
+                    reset()
+                }
+            }
+        } catch (err: any) {
+            showError(err?.response?.data?.message)
+            setOpen(false)
+        }
     };
 
     return (
@@ -82,11 +119,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                         <DataGrid
                             disableColumnFilter
                             rowSelection={false}
-                            rows={rows}
+                            rows={lstBilding?.data?.data?.data}
+
                             columns={columns}
                             initialState={{ pagination: { paginationModel } }}
                             pageSizeOptions={[5, 10]}
                             checkboxSelection={false}
+                            getRowId={(row) => row._id}
+
                             onRowClick={(params) => {
                                 router.push(`/flour/${params.row.id}`);
                             }}
@@ -114,48 +154,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     <form id="society-form" onSubmit={handleSubmit(onSubmit)}>
 
                         <Grid container spacing={3}>
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <Controller
-                                    name="Socity"
-                                    control={control}
-                                    defaultValue=""
-                                    rules={{ required: "Socity is required" }}
-                                    render={({ field }) => (
-                                        <FormControl fullWidth error={!!errors.Socity}>
-                                            <InputLabel id="socity-label">Socity</InputLabel>
-                                            <Select
-                                                labelId="socity-label"
-                                                id="socity"
-                                                label="Socity"
-                                                {...field}
-                                            >
-                                                <MenuItem value={10}>Ten</MenuItem>
-                                                <MenuItem value={20}>Twenty</MenuItem>
-                                                <MenuItem value={30}>Thirty</MenuItem>
-                                            </Select>
-                                            <FormHelperText>{errors.Socity?.message}</FormHelperText>
-                                        </FormControl>
-                                    )}
-                                />
-                            </Grid>
-                            <Grid size={{ xs: 6, md: 12 }}>
+                            <Grid size={{ xs: 12, md: 12 }}>
                                 <TextField label="Name" variant="outlined" fullWidth
                                     {...register("Name", { required: "Name is required" })}
                                     error={!!errors.Name}
                                     helperText={errors.Name?.message}
-                                />
-                            </Grid>
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <TextField
-                                    id="outlined-multiline-static"
-                                    label="Address"
-                                    multiline
-                                    rows={4}
-                                    defaultValue="Default Value"
-                                    fullWidth
-                                    {...register("Address", { required: "Address is required" })}
-                                    error={!!errors.Address}
-                                    helperText={errors.Address?.message}
                                 />
                             </Grid>
                         </Grid>

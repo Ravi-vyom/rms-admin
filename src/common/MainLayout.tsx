@@ -29,7 +29,7 @@ const data = [
   {
     name: 'Dashboard',
     icon: <DashboardIcon />,
-    path: '/'
+    path: '/dashboard'
   }, {
     name: 'Socities',
     icon: <ApartmentIcon />,
@@ -231,6 +231,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                   {
                     minHeight: 48,
                     px: 2.5,
+                    backgroundColor: ""
                   },
                   open
                     ? {
@@ -239,6 +240,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     : {
                       justifyContent: 'center',
                     },
+
                 ]}
               >
                 <ListItemIcon
@@ -278,7 +280,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, pt: 10, pl: 2, pr: 2 }}>
-        {/* <DrawerHeader /> */}
 
         <div>
           {children}

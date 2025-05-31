@@ -1,78 +1,166 @@
 "use client"
+import CommonDialog from "@/common/CommonDialog";
 import TitleWithButton from "@/common/TitleWithButton";
-import { Box, Button, Grid, IconButton, Paper, TextField } from "@mui/material";
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { showError, showSuccess } from "@/components/utils/toast";
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
-import CommonDialog from "@/common/CommonDialog";
-import { useFieldArray, useForm } from "react-hook-form";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Autocomplete, Box, Button, Chip, Grid, IconButton, Paper, TextField } from "@mui/material";
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useQuery } from "@tanstack/react-query";
-import { listOfSocieties } from "./actions";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import Swal from "sweetalert2";
+import { addSociety, deleteSociety, editSociety, getUserList, listOfSocieties } from "./actions";
 
-const columns: GridColDef[] = [
-  { field: 'name', headerName: 'Name', width: 170, },
-  { field: 'address', headerName: 'Address', flex: 1 },
 
-  {
-    field: 'Actions', headerName: 'Action',
-    renderCell: ({ row }) => (
-      <div>
-        <IconButton aria-label="delete" color="primary" size="medium">
-          <ModeEditIcon fontSize="inherit" />
-        </IconButton>
-        <IconButton aria-label="delete" color="error" size="medium">
-          <DeleteIcon fontSize="inherit" />
-        </IconButton>
-
-      </div>
-    )
-  },
-
-];
 
 const paginationModel = { page: 0, pageSize: 5 };
 
 export default function Socity() {
   const [open, setOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false)
+  const [objSociety, setSociety] = useState<any>()
   const router = useRouter()
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', width: 170, },
+    { field: 'address', headerName: 'Address', flex: 1 },
+    {
+      field: 'authorities',
+      headerName: 'Authorities',
+      flex: 1,
+      renderCell: ({ row }) => (
+        row.authorities?.map((auth: any) => (
+          <Chip
+            key={auth._id || auth.user?._id}
+            label={auth.name || auth.user?.name || "Unknown"}
+            size="small"
+            color="primary"
+          />
+        ))
+      ),
+    },
+
+    {
+      field: 'Actions', headerName: 'Action',
+      renderCell: ({ row }) => (
+        <div>
+          <IconButton onClick={(e) => {
+            e.stopPropagation()
+            setOpen(true)
+            setIsEdit(true)
+            setSociety(row)
+          }} aria-label="delete" color="primary" size="medium">
+            <ModeEditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton onClick={(e) => {
+            e.stopPropagation()
+            Swal.fire({
+              title: "Are you sure?",
+              text: "This action cannot be undone. Do you really want to delete this item?",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Yes, delete it!",
+              cancelButtonText: "Cancel"
+            }).then(async (result) => {
+              if (result.isConfirmed) {
+                await deleteSociety(row._id)
+                lstSocieties.refetch()
+                Swal.fire({
+                  title: "Deleted!",
+                  text: "The item has been successfully deleted.",
+                  icon: "success",
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              }
+            });
+
+          }} aria-label="delete" color="error" size="medium">
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+
+        </div >
+      )
+    },
+
+  ];
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+
     formState: { errors },
   } = useForm({
     defaultValues: {
       Name: "",
       Address: "",
-      Authorities: [
-        {
-          user: ""
-        }
-      ]
+      Authorities: []
     },
   });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "Authorities"
-  });
-
-  const onSubmit = (data: any) => {
-    console.log("Form submitted:", data);
-    setOpen(false);
-    reset(); // clear the form
-  };
 
   const lstSocieties = useQuery({
     queryKey: ["LstSocieties"],
     queryFn: async () => await listOfSocieties()
   })
 
-  console.log(lstSocieties?.data?.data?.data)
+  const lstUser = useQuery({
+    queryKey: ["lstUser"],
+    queryFn: async () => await getUserList()
+  })
+
+  const onSubmit = async (data: any) => {
+    try {
+      if (isEdit && objSociety?._id) {
+        const response = await editSociety(objSociety?._id, {
+          name: data.Name,
+          address: data.Address,
+          authorities: data.Authorities
+        })
+        if (response.data.status === true) {
+          showSuccess(response?.data?.message)
+          lstSocieties.refetch()
+          setOpen(false)
+          reset()
+        }
+
+      } else {
+        const response = await addSociety({
+          name: data.Name,
+          address: data.Address,
+          authorities: data.Authorities
+        })
+        if (response.data.status === true) {
+          showSuccess(response?.data?.message)
+          lstSocieties.refetch()
+          setOpen(false)
+          reset()
+        }
+      }
+    } catch (err: any) {
+      showError(err?.response?.data?.message)
+      setOpen(false)
+    }
+  };
+
+  useEffect(() => {
+    if (objSociety && isEdit) {
+      reset({
+        Name: objSociety?.name,
+        Authorities: objSociety?.authorities?.map((u: any) => ({
+          user: u.user || u._id
+        })) || [],
+        Address: objSociety?.address,
+
+      })
+    }
+  }, [objSociety, isEdit, reset])
+
 
   return (
     <div>
@@ -110,7 +198,8 @@ export default function Socity() {
                 },
                 '& .MuiDataGrid-columnHeaderTitle': {
                   fontWeight: "600"
-                }
+                },
+                cursor: "pointer"
               }}
             />
           </Paper>
@@ -119,7 +208,7 @@ export default function Socity() {
       <CommonDialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Add New Society"
+        title={isEdit ? "Edit" : "Add"}
         content={
           <form id="society-form" onSubmit={handleSubmit(onSubmit)}>
 
@@ -132,21 +221,46 @@ export default function Socity() {
                 />
               </Grid>
               <Grid size={{ xs: 6, md: 12 }}>
-                {fields.map((field, index) => (
-                  <Box key={field.id} sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                    <TextField
-                      label={`User ID #${index + 1}`}
-                      fullWidth
-                      {...register(`Authorities.${index}.user`, { required: "User ID is required" })}
-                      error={!!errors?.Authorities?.[index]?.user}
-                      helperText={errors?.Authorities?.[index]?.user?.message}
-                    />
-                    <IconButton color="error" onClick={() => remove(index)}><DeleteIcon /></IconButton>
-                  </Box>
-                ))}
-                <Button onClick={() => append({ user: "" })} variant="outlined" sx={{ mt: 1 }}>
-                  Add Authority
-                </Button>
+                <Controller
+                  name="Authorities"
+                  control={control}
+                  rules={{
+                    validate: (value) => value?.length > 0 || "At least one authority is required",
+                  }}
+                  render={({ field }) => {
+                    const userList: { _id: string; name: string }[] = lstUser?.data?.data?.data || [];
+                    return (
+                      <Autocomplete
+                        multiple
+                        options={userList}
+                        getOptionLabel={(option) => option.name}
+                        value={
+                          field.value?.length
+                            ? userList.filter((user) =>
+                              field.value.some((auth: { user: string }) => auth.user === user._id)
+                            )
+                            : []
+                        }
+                        onChange={(_, selectedUsers: { _id: string; name: string }[]) => {
+                          const mapped = selectedUsers.map((user) => ({ user: user._id }));
+                          field.onChange(mapped);
+                        }}
+                        isOptionEqualToValue={(option, value) => option._id === value._id}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Authorities"
+                            error={!!errors.Authorities}
+                            helperText={errors.Authorities?.message}
+                          />
+                        )}
+                      />
+                    );
+                  }}
+                />
+
+
+
               </Grid>
               <Grid size={{ xs: 6, md: 12 }}>
                 <TextField
@@ -168,7 +282,7 @@ export default function Socity() {
           <>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button variant="contained" form="society-form" color="primary" type="submit">
-              Confirm
+              Save
             </Button>
           </>
         }
