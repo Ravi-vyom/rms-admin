@@ -68,7 +68,6 @@ export default function Socity() {
             }).then(async (result) => {
               if (result.isConfirmed) {
                 await deleteSociety(row._id)
-                lstSocieties.refetch()
                 Swal.fire({
                   title: "Deleted!",
                   text: "The item has been successfully deleted.",
