@@ -1,9 +1,9 @@
 import axios from "axios";
 
-export async function listOfBuilding() {
+export async function listOfBuilding(id: string) {
   try {
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/Building/getAll`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/Building/getAll/${id}`
     );
     return response;
   } catch (error) {

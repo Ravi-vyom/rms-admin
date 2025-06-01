@@ -55,8 +55,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   });
 
   const lstBilding = useQuery({
-    queryKey: ["LstBuilding"],
-    queryFn: async () => await listOfBuilding(),
+    queryKey: ["LstBuilding", id],
+    queryFn: async () => await listOfBuilding(id),
   });
 
   const lstPramukh = useQuery({
