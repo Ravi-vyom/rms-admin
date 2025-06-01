@@ -24,38 +24,46 @@ export async function getUser(data: any) {
   }
 }
 
-export async function getUserList(){
+export async function getUserList() {
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/user/list`);
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/user/head/list`
+    );
     return response;
   } catch (error) {
     throw error;
   }
 }
 
-export async function addSociety(data:any){
+export async function addSociety(data: any) {
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/add`,data);
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/add`,
+      data
+    );
     return response;
   } catch (error) {
     throw error;
   }
 }
 
-
-export async function editSociety(id:string,data:any){
+export async function editSociety(id: string, data: any) {
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/update/${id}`,data);
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/update/${id}`,
+      data
+    );
     return response;
   } catch (error) {
     throw error;
   }
 }
 
-
-export async function deleteSociety(id:string){
+export async function deleteSociety(id: string) {
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/delete/${id}`);
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/Heaight/delete/${id}`
+    );
     return response;
   } catch (error) {
     throw error;
