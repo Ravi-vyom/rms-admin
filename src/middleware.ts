@@ -17,13 +17,13 @@ export async function middleware(req: NextRequest) {
 
   // Case 2: User is logged in and trying to access a public page like signin or verify-otp
   if (isPublicPath && token) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/main/dashboard", req.url));
   }
 
   // Case 3: Root path — decide what you want
   if (isRootPath) {
     return token
-      ? NextResponse.redirect(new URL("/dashboard", req.url))
+      ? NextResponse.redirect(new URL("/main/dashboard", req.url))
       : NextResponse.redirect(new URL("/login", req.url));
   }
 

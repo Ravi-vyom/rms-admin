@@ -1,8 +1,13 @@
 "use client";
+import CommonDialog from "@/common/CommonDialog";
 import TitleWithButton from "@/common/TitleWithButton";
+import { showError, showSuccess } from "@/components/utils/toast";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
   Box,
   Button,
+  Chip,
   FormControl,
   FormHelperText,
   Grid,
@@ -14,50 +19,73 @@ import {
   TextField,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ModeEditIcon from "@mui/icons-material/ModeEdit";
-import CommonDialog from "@/common/CommonDialog";
-import { Controller, useForm } from "react-hook-form";
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { addFlour, deleteFlour, editFlour, listOfFlour } from "./actions";
-import { showError, showSuccess } from "@/components/utils/toast";
+import { useRouter } from "next/navigation";
+import { use, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import {
+  addBuilding,
+  deleteBuilding,
+  editBuilding,
+  getUserPramukh,
+  listOfBuilding,
+} from "./actions";
 import Swal from "sweetalert2";
 
 const paginationModel = { page: 0, pageSize: 5 };
+
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [objFlour, setobjFlour] = useState<any>();
+  const [objBuilding, setObjBuilding] = useState<any>();
+  const router = useRouter();
+  const { id } = use(params);
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      flourName: "",
+      Name: "",
+      User: "",
     },
   });
 
-  const lstFlour = useQuery({
+  const lstBilding = useQuery({
     queryKey: ["LstBuilding", id],
-    queryFn: async () => await listOfFlour(id),
+    queryFn: async () => await listOfBuilding(id),
+  });
+
+  const lstPramukh = useQuery({
+    queryKey: ["LstPramukh"],
+    queryFn: async () => await getUserPramukh(),
   });
 
   const columns: GridColDef[] = [
     {
-      field: "buildingId",
-      headerName: "Bulding",
-      width: 160,
-      renderCell: ({ row }) => row?.buildingId?.buildingName,
+      field: "heaight",
+      headerName: "Heaight",
+      width: 200,
+      renderCell: ({ row }) => row?.heaight?.name,
     },
-    { field: "flourName", headerName: "Name", flex: 1 },
-
+    { field: "buildingName", headerName: "Building Name", width: 200 },
+    {
+      field: "authorities",
+      headerName: "Authorities",
+      flex: 1,
+      renderCell: ({ row }) =>
+        row?.heaight?.authorities?.map((auth: any, index: number) => (
+          <Chip
+            key={index}
+            label={auth?.user?.name}
+            size="small"
+            color="primary"
+          />
+        )),
+    },
     {
       field: "Actions",
       headerName: "Action",
@@ -68,7 +96,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               e.stopPropagation();
               setOpen(true);
               setIsEdit(true);
-              setobjFlour(row);
+              setObjBuilding(row);
             }}
             aria-label="delete"
             color="primary"
@@ -90,7 +118,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 cancelButtonText: "Cancel",
               }).then(async (result) => {
                 if (result.isConfirmed) {
-                  await deleteFlour(row._id);
+                  await deleteBuilding(row._id);
                   Swal.fire({
                     title: "Deleted!",
                     text: "The item has been successfully deleted.",
@@ -98,7 +126,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     timer: 2000,
                     showConfirmButton: false,
                   });
-                  lstFlour.refetch();
+                  lstBilding.refetch();
                 }
               });
             }}
@@ -112,61 +140,56 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       ),
     },
   ];
+
   const handleClose = () => {
     setIsEdit(false);
-    setobjFlour(undefined);
-    reset({ flourName: "" });
+    setObjBuilding(undefined);
+    reset({ Name: "", User: "" });
     setOpen(false);
   };
 
   const onSubmit = async (data: any) => {
     try {
-      if (isEdit && objFlour?._id) {
-        const response = await editFlour(objFlour?._id, {
-          flourName: data.flourName,
-          buildingId: id,
+      if (isEdit && objBuilding?._id) {
+        const response = await editBuilding(objBuilding?._id, {
+          buildingName: data.Name,
+          heaight: id,
+          user: data.User,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
-          lstFlour.refetch();
+          lstBilding.refetch();
           setOpen(false);
-          reset({
-            flourName: "",
-          });
-          setIsEdit(false);
+          reset();
         }
       } else {
-        const response = await addFlour({
-          flourName: data.flourName,
-          buildingId: id,
+        const response = await addBuilding({
+          buildingName: data.Name,
+          heaight: id,
+          user: data.User,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
-          lstFlour.refetch();
+          lstBilding.refetch();
           setOpen(false);
-          setIsEdit(false);
-          reset({
-            flourName: "",
-          });
+          reset();
         }
       }
     } catch (err: any) {
       showError(err?.response?.data?.message);
       setOpen(false);
-      reset({
-        flourName: "",
-      });
-      setIsEdit(false);
     }
   };
 
   useEffect(() => {
-    if (objFlour && isEdit) {
+    if (objBuilding && isEdit) {
       reset({
-        flourName: objFlour?.flourName,
+        Name: objBuilding?.buildingName,
+        User: objBuilding?.user,
       });
     }
-  }, [isEdit, objFlour]);
+  }, [isEdit, objBuilding]);
+
   return (
     <>
       <Box
@@ -185,7 +208,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           }}
         >
           <TitleWithButton
-            title="Flour"
+            title="Building"
             buttonText="Create"
             onClick={() => setOpen(true)}
           />
@@ -202,12 +225,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             <DataGrid
               disableColumnFilter
               rowSelection={false}
-              rows={lstFlour?.data?.data?.data}
+              rows={lstBilding?.data?.data?.data}
               columns={columns}
               initialState={{ pagination: { paginationModel } }}
               pageSizeOptions={[5, 10]}
               checkboxSelection={false}
               getRowId={(row) => row._id}
+              onRowClick={(params) => {
+                router.push(`/main/flour/${params.row._id}`);
+              }}
               sx={{
                 border: 0,
                 width: "100%",
@@ -220,30 +246,63 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 },
                 cursor: "pointer",
               }}
-              onRowClick={(params) => {
-                router.push(`/flat/${params.row._id}`);
-              }}
             />
           </Paper>
         </div>
       </Box>
+
       <CommonDialog
         open={open}
+        dialogProps={{
+          maxWidth: "sm",
+        }}
         onClose={handleClose}
         title={isEdit ? "Edit" : "Add"}
         content={
           <form id="society-form" onSubmit={handleSubmit(onSubmit)}>
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 6, md: 12 }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, md: 12 }}>
                 <TextField
-                  label="Flour Name"
+                  label="Name"
                   variant="outlined"
                   fullWidth
-                  {...register("flourName", {
-                    required: "flourName is required",
-                  })}
-                  error={!!errors.flourName}
-                  helperText={errors.flourName?.message}
+                  {...register("Name", { required: "Name is required" })}
+                  error={!!errors.Name}
+                  helperText={errors.Name?.message?.toString()}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 12 }}>
+                <Controller
+                  name="User"
+                  control={control}
+                  rules={{ required: "Please select a Pramukh" }}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={errors.User ? true : false}>
+                      <InputLabel id="demo-simple-select-label">
+                        Pramukh
+                      </InputLabel>
+                      <Select
+                        {...field}
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        label="Pramukh"
+                        value={field.value || ""}
+                      >
+                        {lstPramukh?.data?.data?.data?.map(
+                          (item: any, index: number) => (
+                            <MenuItem key={index} value={item?._id}>
+                              {item?.name}
+                            </MenuItem>
+                          )
+                        )}
+                      </Select>
+                      {errors.User && (
+                        <FormHelperText sx={{ color: "red" }}>
+                          {errors.User.message?.toString()}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
                 />
               </Grid>
             </Grid>
@@ -251,7 +310,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         }
         actions={
           <>
-            <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button
               variant="contained"
               form="society-form"
