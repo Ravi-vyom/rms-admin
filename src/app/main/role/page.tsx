@@ -288,9 +288,9 @@ export default function Page() {
           heaightID: data.heightId,
           profile_pic: result?.data?.data?.id
             ? {
-                id: result?.data?.data.id,
-                image: result?.data?.data.url,
-              }
+              id: result?.data?.data.id,
+              image: result?.data?.data.url,
+            }
             : objRole?.profile_pic,
           familyMembers: data.familyMembers,
           businessDetails: data.businessDetail,
