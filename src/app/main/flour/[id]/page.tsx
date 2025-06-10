@@ -24,8 +24,8 @@ import { useQuery } from "@tanstack/react-query";
 import { addFlour, deleteFlour, editFlour, listOfFlour } from "./actions";
 import { showError, showSuccess } from "@/components/utils/toast";
 import Swal from "sweetalert2";
+import DataTableLayout from "@/common/DataTableLayout";
 
-const paginationModel = { page: 0, pageSize: 5 };
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -169,64 +169,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }, [isEdit, objFlour]);
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-        }}
-      >
-        <div
-          style={{
-            width: "92%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 17,
-          }}
-        >
-          <TitleWithButton
-            title="Flour"
-            buttonText="Create"
-            onClick={() => setOpen(true)}
-          />
-          <Paper
-            elevation={5}
-            sx={{
-              height: "100%",
-              marginBottom: 2,
-              borderRadius: 5,
-              overflow: "hidden",
-              py: 2,
-            }}
-          >
-            <DataGrid
-              disableColumnFilter
-              rowSelection={false}
-              rows={lstFlour?.data?.data?.data}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10]}
-              checkboxSelection={false}
-              getRowId={(row) => row._id}
-              sx={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                "& .MuiDataGrid-columnHeaders": {
-                  color: "black",
-                },
-                "& .MuiDataGrid-columnHeaderTitle": {
-                  fontWeight: "600",
-                },
-                cursor: "pointer",
-              }}
-              onRowClick={(params) => {
-                router.push(`/main/flat/${params.row._id}`);
-              }}
-            />
-          </Paper>
-        </div>
-      </Box>
+      <DataTableLayout
+        title="Flour"
+        buttonText="Create"
+        onButtonClick={() => setOpen(true)}
+        rows={lstFlour?.data?.data?.data || []}
+        columns={columns}
+        paginationModel={{ page: 0, pageSize: 10 }}
+        onRowClick={(params) => router.push(`/main/flat/${params.row._id}`)}
+      />
       <CommonDialog
         open={open}
         onClose={handleClose}

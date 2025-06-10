@@ -60,3 +60,14 @@ export async function deleteFlat(id: string) {
     throw error;
   }
 }
+
+export async function getUser() {
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/user/list`
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}

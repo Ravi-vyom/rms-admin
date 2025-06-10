@@ -14,7 +14,7 @@ export async function listOfBuilding(id: string) {
 export async function getUserPramukh() {
   try {
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/user/list`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/pramukh/list`
     );
     return response;
   } catch (error) {

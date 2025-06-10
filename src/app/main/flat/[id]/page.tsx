@@ -21,14 +21,14 @@ import { Controller, useForm } from "react-hook-form";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { addFlat, deleteFlat, editFlat, listOfFlat } from "./actions";
+import { addFlat, deleteFlat, editFlat, getUser, listOfFlat } from "./actions";
 import { showError, showSuccess } from "@/components/utils/toast";
 import Swal from "sweetalert2";
+import { getUserPramukh } from "../../building/[id]/actions";
+import DataTableLayout from "@/common/DataTableLayout";
 
-const paginationModel = { page: 0, pageSize: 5 };
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [objFlat, setobjFlat] = useState<any>();
@@ -36,17 +36,20 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
       flatName: "",
+      currentMember: "",
     },
   });
+
   const lstFlat = useQuery({
     queryKey: ["LstFlat", id],
     queryFn: async () => await listOfFlat(id),
   });
-
+  console.log(lstFlat.data);
   const handleClose = () => {
     setIsEdit(false);
     setobjFlat(undefined);
@@ -72,56 +75,65 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       ),
     },
     {
+      field: "currentMember",
+      headerName: "Assigned Flat",
+      flex: 1,
+      renderCell: ({ row }) => row?.currentMember?.name,
+    },
+    {
       field: "Actions",
       headerName: "Action",
       renderCell: ({ row }) => (
-        <div>
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(true);
-              setIsEdit(true);
-              setobjFlat(row);
-            }}
-            aria-label="delete"
-            color="primary"
-            size="medium"
-          >
-            <ModeEditIcon fontSize="inherit" />
-          </IconButton>
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              Swal.fire({
-                title: "Are you sure?",
-                text: "This action cannot be undone. Do you really want to delete this item?",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!",
-                cancelButtonText: "Cancel",
-              }).then(async (result) => {
-                if (result.isConfirmed) {
-                  await deleteFlat(row._id);
-                  Swal.fire({
-                    title: "Deleted!",
-                    text: "The item has been successfully deleted.",
-                    icon: "success",
-                    timer: 2000,
-                    showConfirmButton: false,
-                  });
-                  lstFlat.refetch();
-                }
-              });
-            }}
-            aria-label="delete"
-            color="error"
-            size="medium"
-          >
-            <DeleteIcon fontSize="inherit" />
-          </IconButton>
-        </div>
+        console.log(row),
+        (
+          <div>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(true);
+                setIsEdit(true);
+                setobjFlat(row);
+              }}
+              aria-label="delete"
+              color="primary"
+              size="medium"
+            >
+              <ModeEditIcon fontSize="inherit" />
+            </IconButton>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                Swal.fire({
+                  title: "Are you sure?",
+                  text: "This action cannot be undone. Do you really want to delete this item?",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonColor: "#3085d6",
+                  cancelButtonColor: "#d33",
+                  confirmButtonText: "Yes, delete it!",
+                  cancelButtonText: "Cancel",
+                }).then(async (result) => {
+                  if (result.isConfirmed) {
+                    await deleteFlat(row._id);
+                    Swal.fire({
+                      title: "Deleted!",
+                      text: "The item has been successfully deleted.",
+                      icon: "success",
+                      timer: 2000,
+                      showConfirmButton: false,
+                    });
+                    lstFlat.refetch();
+                  }
+                });
+              }}
+              aria-label="delete"
+              color="error"
+              size="medium"
+            >
+              <DeleteIcon fontSize="inherit" />
+            </IconButton>
+          </div>
+        )
       ),
     },
   ];
@@ -132,6 +144,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         const response = await editFlat(objFlat?._id, {
           flatName: data.flatName,
           flourId: id,
+          currentMember: data.currentMember,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
@@ -139,6 +152,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           setOpen(false);
           reset({
             flatName: "",
+            currentMember: "",
           });
           setIsEdit(false);
         }
@@ -146,6 +160,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         const response = await addFlat({
           flatName: data.flatName,
           flourId: id,
+          currentMember: data.currentMember,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
@@ -154,6 +169,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           setIsEdit(false);
           reset({
             flatName: "",
+            currentMember: "",
           });
         }
       }
@@ -166,71 +182,30 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       setIsEdit(false);
     }
   };
+  const lstUser = useQuery({
+    queryKey: ["LstPramukh"],
+    queryFn: async () => await getUser(),
+  });
 
   useEffect(() => {
     if (objFlat && isEdit) {
       reset({
         flatName: objFlat?.flatName,
+        currentMember: objFlat?.currentMember,
       });
     }
   }, [isEdit, objFlat]);
 
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-        }}
-      >
-        <div
-          style={{
-            width: "92%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 17,
-          }}
-        >
-          <TitleWithButton
-            title="Flat"
-            buttonText="Create"
-            onClick={() => setOpen(true)}
-          />
-          <Paper
-            elevation={5}
-            sx={{
-              height: "100%",
-              marginBottom: 2,
-              borderRadius: 5,
-              overflow: "hidden",
-              py: 2,
-            }}
-          >
-            <DataGrid
-              disableColumnFilter
-              rowSelection={false}
-              rows={lstFlat?.data?.data?.data}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10]}
-              getRowId={(row) => row._id}
-              checkboxSelection={false}
-              sx={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                "& .MuiDataGrid-columnHeaders": {
-                  color: "black",
-                },
-                "& .MuiDataGrid-columnHeaderTitle": {
-                  fontWeight: "600",
-                },
-              }}
-            />
-          </Paper>
-        </div>
-      </Box>
+      <DataTableLayout
+        title="Flat"
+        buttonText="Create"
+        onButtonClick={() => setOpen(true)}
+        rows={lstFlat?.data?.data?.data || []}
+        columns={columns}
+        paginationModel={{ page: 0, pageSize: 10 }}
+      />
       <CommonDialog
         open={open}
         onClose={handleClose}
@@ -248,6 +223,43 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   })}
                   error={!!errors.flatName}
                   helperText={errors.flatName?.message}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 12 }}>
+                <Controller
+                  name="currentMember"
+                  control={control}
+                  // rules={{ required: "Please select a User" }}
+                  render={({ field }) => (
+                    <FormControl
+                      fullWidth
+                      error={errors.currentMember ? true : false}
+                    >
+                      <InputLabel id="demo-simple-select-label">
+                        Current User
+                      </InputLabel>
+                      <Select
+                        {...field}
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        label="Current User"
+                        value={field.value || ""}
+                      >
+                        {lstUser?.data?.data?.data?.map(
+                          (item: any, index: number) => (
+                            <MenuItem key={index} value={item?._id}>
+                              {item?.name}
+                            </MenuItem>
+                          )
+                        )}
+                      </Select>
+                      {errors.currentMember && (
+                        <FormHelperText sx={{ color: "red" }}>
+                          {errors.currentMember.message?.toString()}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
                 />
               </Grid>
             </Grid>

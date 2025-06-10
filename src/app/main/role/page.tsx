@@ -37,6 +37,7 @@ import {
 } from "./actions";
 import InputFileUpload from "@/common/InputFileUpload";
 import { FieldError } from "react-hook-form";
+import DataTableLayout from "@/common/DataTableLayout";
 
 const paginationModel = { page: 0, pageSize: 5 };
 const roleSchema = yup.object({
@@ -288,9 +289,9 @@ export default function Page() {
           heaightID: data.heightId,
           profile_pic: result?.data?.data?.id
             ? {
-              id: result?.data?.data.id,
-              image: result?.data?.data.url,
-            }
+                id: result?.data?.data.id,
+                image: result?.data?.data.url,
+              }
             : objRole?.profile_pic,
           familyMembers: data.familyMembers,
           businessDetails: data.businessDetail,
@@ -351,65 +352,14 @@ export default function Page() {
 
   return (
     <div>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-        }}
-      >
-        <div
-          style={{
-            width: "92%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 17,
-          }}
-        >
-          <TitleWithButton
-            title="Assign Role"
-            buttonText="Create"
-            onClick={() => setOpen(true)}
-          />
-          <Paper
-            elevation={5}
-            sx={{
-              height: "100%",
-              marginBottom: 2,
-              borderRadius: 5,
-              overflow: "hidden",
-              py: 2,
-            }}
-          >
-            <DataGrid
-              disableColumnFilter
-              rowSelection={false}
-              rows={lstRole.data?.data?.data}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10]}
-              checkboxSelection={false}
-              onRowClick={(params) => {
-                router.push(`/main/building/${params.row._id}`);
-              }}
-              getRowId={(row) => row._id}
-              sx={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                "& .MuiDataGrid-columnHeaders": {
-                  color: "black",
-                },
-                "& .MuiDataGrid-columnHeaderTitle": {
-                  fontWeight: "600",
-                },
-                cursor: "pointer",
-              }}
-            />
-          </Paper>
-        </div>
-      </Box>
+      <DataTableLayout
+        title="Assign Role"
+        buttonText="Create"
+        onButtonClick={() => setOpen(true)}
+        rows={lstRole?.data?.data?.data || []}
+        columns={columns}
+        paginationModel={{ page: 0, pageSize: 10 }}
+      />
       <CommonDialog
         open={open}
         onClose={handleclose}

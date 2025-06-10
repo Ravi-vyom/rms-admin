@@ -1,20 +1,18 @@
 "use client";
 import CommonDialog from "@/common/CommonDialog";
-import TitleWithButton from "@/common/TitleWithButton";
+import DataTableLayout from "@/common/DataTableLayout";
 import { showError, showSuccess } from "@/components/utils/toast";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
   Autocomplete,
-  Box,
   Button,
   Chip,
   Grid,
   IconButton,
-  Paper,
   TextField,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,8 +25,6 @@ import {
   getUserList,
   listOfSocieties,
 } from "./actions";
-
-const paginationModel = { page: 0, pageSize: 5 };
 
 export default function Socity() {
   const [open, setOpen] = useState(false);
@@ -175,10 +171,10 @@ export default function Socity() {
     if (objSociety && isEdit) {
       reset({
         Name: objSociety?.name,
-        // Authorities:
-        // objSociety?.authorities?.map((a: any) => ({
-        //   user: a?.user?._id,
-        // })) || [],
+        Authorities:
+          objSociety?.authorities?.map((a: any) => ({
+            user: a?.user?._id,
+          })) || [],
         Address: objSociety?.address,
       });
     }
@@ -186,65 +182,16 @@ export default function Socity() {
 
   return (
     <div>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-        }}
-      >
-        <div
-          style={{
-            width: "92%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 17,
-          }}
-        >
-          <TitleWithButton
-            title="Socities"
-            buttonText="Create"
-            onClick={() => setOpen(true)}
-          />
-          <Paper
-            elevation={5}
-            sx={{
-              height: "100%",
-              marginBottom: 2,
-              borderRadius: 5,
-              overflow: "hidden",
-              py: 2,
-            }}
-          >
-            <DataGrid
-              disableColumnFilter
-              rowSelection={false}
-              rows={lstSocieties?.data?.data?.data}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10]}
-              checkboxSelection={false}
-              onRowClick={(params) => {
-                router.push(`/main/building/${params.row._id}`);
-              }}
-              getRowId={(row) => row._id}
-              sx={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                "& .MuiDataGrid-columnHeaders": {
-                  color: "black",
-                },
-                "& .MuiDataGrid-columnHeaderTitle": {
-                  fontWeight: "600",
-                },
-                cursor: "pointer",
-              }}
-            />
-          </Paper>
-        </div>
-      </Box>
+      <DataTableLayout
+        title="Societies"
+        buttonText="Create"
+        onButtonClick={() => setOpen(true)}
+        rows={lstSocieties?.data?.data?.data || []}
+        columns={columns}
+        paginationModel={{ page: 0, pageSize: 10 }}
+        onRowClick={(params) => router.push(`/main/building/${params.row._id}`)}
+      />
+
       <CommonDialog
         open={open}
         onClose={() => setOpen(false)}

@@ -1,11 +1,10 @@
 "use client";
 import CommonDialog from "@/common/CommonDialog";
-import TitleWithButton from "@/common/TitleWithButton";
+import DataTableLayout from "@/common/DataTableLayout";
 import { showError, showSuccess } from "@/components/utils/toast";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
-  Box,
   Button,
   Chip,
   FormControl,
@@ -14,15 +13,15 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   TextField,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import Swal from "sweetalert2";
 import {
   addBuilding,
   deleteBuilding,
@@ -30,9 +29,6 @@ import {
   getUserPramukh,
   listOfBuilding,
 } from "./actions";
-import Swal from "sweetalert2";
-
-const paginationModel = { page: 0, pageSize: 5 };
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [open, setOpen] = useState(false);
@@ -71,11 +67,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       width: 200,
       renderCell: ({ row }) => row?.heaight?.name,
     },
-    { field: "buildingName", headerName: "Building Name", width: 200 },
     {
       field: "authorities",
       headerName: "Authorities",
-      flex: 1,
+      width: 200,
       renderCell: ({ row }) =>
         row?.heaight?.authorities?.map((auth: any, index: number) => (
           <Chip
@@ -85,6 +80,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             color="primary"
           />
         )),
+    },
+    { field: "buildingName", headerName: "Building Name", width: 200 },
+    {
+      field: "user",
+      headerName: "Building Pramukh",
+      flex: 1,
+      renderCell: ({ row }) => row?.user?.name,
     },
     {
       field: "Actions",
@@ -185,72 +187,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     if (objBuilding && isEdit) {
       reset({
         Name: objBuilding?.buildingName,
-        User: objBuilding?.user,
+        User: objBuilding?.user?._id,
       });
     }
   }, [isEdit, objBuilding]);
 
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-        }}
-      >
-        <div
-          style={{
-            width: "92%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 17,
-          }}
-        >
-          <TitleWithButton
-            title="Building"
-            buttonText="Create"
-            onClick={() => setOpen(true)}
-          />
-          <Paper
-            elevation={5}
-            sx={{
-              height: "100%",
-              marginBottom: 2,
-              borderRadius: 5,
-              overflow: "hidden",
-              py: 2,
-            }}
-          >
-            <DataGrid
-              disableColumnFilter
-              rowSelection={false}
-              rows={lstBilding?.data?.data?.data}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10]}
-              checkboxSelection={false}
-              getRowId={(row) => row._id}
-              onRowClick={(params) => {
-                router.push(`/main/flour/${params.row._id}`);
-              }}
-              sx={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                "& .MuiDataGrid-columnHeaders": {
-                  color: "black",
-                },
-                "& .MuiDataGrid-columnHeaderTitle": {
-                  fontWeight: "600",
-                },
-                cursor: "pointer",
-              }}
-            />
-          </Paper>
-        </div>
-      </Box>
-
+      <DataTableLayout
+        title="Building"
+        buttonText="Create"
+        onButtonClick={() => setOpen(true)}
+        rows={lstBilding?.data?.data?.data || []}
+        columns={columns}
+        paginationModel={{ page: 0, pageSize: 10 }}
+        onRowClick={(params) => router.push(`/main/flour/${params.row._id}`)}
+      />
       <CommonDialog
         open={open}
         dialogProps={{
