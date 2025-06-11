@@ -1,11 +1,13 @@
 "use client";
 import CommonDialog from "@/common/CommonDialog";
-import TitleWithButton from "@/common/TitleWithButton";
+import DataTableLayout from "@/common/DataTableLayout";
+import InputFileUpload from "@/common/InputFileUpload";
 import { showError, showSuccess } from "@/components/utils/toast";
 import { yupResolver } from "@hookform/resolvers/yup";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
-  Box,
   Button,
   FormControl,
   FormHelperText,
@@ -13,21 +15,22 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  Controller,
+  FieldError,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import Swal from "sweetalert2";
 import * as yup from "yup";
 import { listOfSocieties } from "../socities/actions";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import {
   addRole,
   deleteRole,
@@ -35,11 +38,7 @@ import {
   getRoles,
   uploadedImage,
 } from "./actions";
-import InputFileUpload from "@/common/InputFileUpload";
-import { FieldError } from "react-hook-form";
-import DataTableLayout from "@/common/DataTableLayout";
 
-const paginationModel = { page: 0, pageSize: 5 };
 const roleSchema = yup.object({
   heightId: yup.string().required("Height is required"),
   name: yup.string().required("Name is required"),
@@ -128,7 +127,6 @@ export default function Page() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [objRole, setObjRole] = useState<any>();
-  const router = useRouter();
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "Name", width: 170 },

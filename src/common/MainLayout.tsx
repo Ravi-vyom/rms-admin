@@ -48,6 +48,11 @@ const data = [
     icon: <Person2Icon />,
     path: "/main/role",
   },
+  {
+    name: "Sub Admin",
+    icon: <Person2Icon />,
+    path: "/main/sub-admin",
+  },
 ];
 const openedMixin = (theme: Theme): CSSObject => ({
   width: drawerWidth,

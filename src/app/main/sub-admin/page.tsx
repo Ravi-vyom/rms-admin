@@ -1,29 +1,35 @@
 "use client";
 import CommonDialog from "@/common/CommonDialog";
 import DataTableLayout from "@/common/DataTableLayout";
-import InputFileUpload from "@/common/InputFileUpload";
 import { showError, showSuccess } from "@/components/utils/toast";
 import { yupResolver } from "@hookform/resolvers/yup";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
   Button,
+  FormControl,
   FormHelperText,
   Grid,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   TextField,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import * as yup from "yup";
-import { addRole, deleteRole, editRole, uploadedImage } from "../role/actions";
-import { listAuthorities } from "./actions";
+import { addRole, deleteRole, editRole } from "../role/actions";
+import { listOfSocieties } from "../socities/actions";
+import { listSubAdmin } from "./actions";
 
 const roleSchema = yup.object({
   name: yup.string().required("Name is required"),
+  heightId: yup.string().required("Society is required"),
   email: yup
     .string()
     .email("Must be a valid email")
@@ -36,24 +42,21 @@ const roleSchema = yup.object({
     .string()
     .required("Password is required")
     .min(6, "Password must be at least 6 characters"),
-  profile_pic: yup
-    .mixed<File | string>()
-    .required("Image is required")
-    .test("fileType", "Unsupported File Format", (value) => {
-      if (!value) return false;
-      if (typeof value === "string") return true;
-      return ["image/jpeg", "image/png", "image/jpg"].includes(value.type);
-    }),
 });
 
 export default function Page() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [objAuthorities, setObjAuthorities] = useState<any>();
+  const router = useRouter();
 
-  const lstAuthorities = useQuery({
-    queryKey: ["lstAuthorities"],
-    queryFn: async () => await listAuthorities(),
+  const lstSubAdmin = useQuery({
+    queryKey: ["lstSubAdmin"],
+    queryFn: async () => await listSubAdmin(),
+  });
+  const lstSocieties = useQuery({
+    queryKey: ["LstSocieties"],
+    queryFn: async () => await listOfSocieties(),
   });
 
   const {
@@ -77,8 +80,9 @@ export default function Page() {
       flex: 1,
       renderCell: ({ row }) => row.heaightID?.name,
     },
-    { field: "phone", headerName: "Phone", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
+    { field: "phone", headerName: "Phone", flex: 1 },
+    { field: "password", headerName: "Password", flex: 1 },
 
     {
       field: "Actions",
@@ -120,7 +124,7 @@ export default function Page() {
                     timer: 2000,
                     showConfirmButton: false,
                   });
-                  lstAuthorities.refetch();
+                  lstSubAdmin.refetch();
                 }
               });
             }}
@@ -141,6 +145,7 @@ export default function Page() {
       name: "",
       password: "",
       phone: "",
+      heightId: "",
     });
     setIsEdit(false);
     setObjAuthorities(undefined);
@@ -149,53 +154,31 @@ export default function Page() {
   const onSubmit = async (data: any) => {
     try {
       if (isEdit && objAuthorities?._id) {
-        var result: any;
-        if (
-          objAuthorities?.profile_pic?.id &&
-          data.profile_pic instanceof File
-        ) {
-          const formData = new FormData();
-          formData.append("image", data.profile_pic);
-          formData.append("oldImageId", objAuthorities.profile_pic.id);
-          await uploadedImage(formData);
-        }
-
         const response = await editRole(objAuthorities?._id, {
           name: data.name,
           email: data.email,
           phone: data.phone,
-          role: "HEAD",
+          role: "SUB_ADMIN",
+          heaightID: data.heightId,
           password: data.password,
-          profile_pic: result?.data?.data?.id
-            ? {
-                id: result?.data?.data.id,
-                image: result?.data?.data.url,
-              }
-            : objAuthorities?.profile_pic,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
-          lstAuthorities.refetch();
+          lstSubAdmin.refetch();
           handleclose();
         }
       } else {
-        const formData = new FormData();
-        formData.append("image", data.profile_pic);
-        const result = await uploadedImage(formData);
         const response = await addRole({
           name: data.name,
           email: data.email,
           phone: data.phone,
-          role: "HEAD",
+          role: "SUB_ADMIN",
+          heaightID: data.heightId,
           password: data.password,
-          profile_pic: {
-            id: result.data.data.id,
-            image: result.data.data.url,
-          },
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
-          lstAuthorities.refetch();
+          lstSubAdmin.refetch();
           handleclose();
         }
       }
@@ -212,7 +195,7 @@ export default function Page() {
         email: objAuthorities.email,
         phone: objAuthorities.phone,
         password: objAuthorities?.password,
-        profile_pic: objAuthorities?.profile_pic?.image,
+        heightId: objAuthorities?.heaightID?._id,
       });
     }
   }, [objAuthorities, isEdit]);
@@ -220,10 +203,10 @@ export default function Page() {
   return (
     <div>
       <DataTableLayout
-        title="Authorities"
+        title="Sub Admin"
         buttonText="Create"
         onButtonClick={() => setOpen(true)}
-        rows={lstAuthorities?.data?.data?.data || []}
+        rows={lstSubAdmin?.data?.data?.data || []}
         columns={columns}
         paginationModel={{ page: 0, pageSize: 10 }}
       />
@@ -235,6 +218,34 @@ export default function Page() {
         content={
           <form id="society-form" onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={4}>
+              <Grid size={{ xs: 6, md: 4 }}>
+                <FormControl fullWidth error={!!errors.heightId}>
+                  <InputLabel id="demo-simple-select-label">Heights</InputLabel>
+                  <Controller
+                    name="heightId"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <Select
+                        labelId="height-select-label"
+                        label="Heights"
+                        {...field}
+                      >
+                        {lstSocieties?.data?.data?.data?.map(
+                          (height: { name: string; _id: string }) => (
+                            <MenuItem key={height._id} value={height._id}>
+                              {height.name}
+                            </MenuItem>
+                          )
+                        )}
+                      </Select>
+                    )}
+                  />
+                  {errors.heightId && (
+                    <FormHelperText>{errors.heightId.message}</FormHelperText>
+                  )}
+                </FormControl>
+              </Grid>
               <Grid size={{ xs: 6, md: 4 }}>
                 <TextField
                   label="Name"
@@ -274,26 +285,6 @@ export default function Page() {
                   error={!!errors.password}
                   helperText={errors.password?.message}
                 />
-              </Grid>
-
-              <Grid size={{ xs: 6, md: 4 }}>
-                <Controller
-                  name="profile_pic"
-                  control={control}
-                  render={({ field }) => (
-                    <InputFileUpload
-                      name="Profile Picture"
-                      value={field.value}
-                      onChange={field.onChange}
-                      defaultImage={objAuthorities?.profile_pic?.image}
-                    />
-                  )}
-                />
-                {errors.profile_pic && (
-                  <FormHelperText error>
-                    {errors.profile_pic.message}
-                  </FormHelperText>
-                )}
               </Grid>
             </Grid>
           </form>

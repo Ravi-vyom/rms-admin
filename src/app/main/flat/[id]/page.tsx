@@ -1,7 +1,10 @@
 "use client";
-import TitleWithButton from "@/common/TitleWithButton";
+import CommonDialog from "@/common/CommonDialog";
+import DataTableLayout from "@/common/DataTableLayout";
+import { showError, showSuccess } from "@/components/utils/toast";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
-  Box,
   Button,
   FormControl,
   FormHelperText,
@@ -9,23 +12,15 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   TextField,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ModeEditIcon from "@mui/icons-material/ModeEdit";
-import CommonDialog from "@/common/CommonDialog";
-import { Controller, useForm } from "react-hook-form";
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
-import { addFlat, deleteFlat, editFlat, getUser, listOfFlat } from "./actions";
-import { showError, showSuccess } from "@/components/utils/toast";
+import { use, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { getUserPramukh } from "../../building/[id]/actions";
-import DataTableLayout from "@/common/DataTableLayout";
+import { addFlat, deleteFlat, editFlat, getUser, listOfFlat } from "./actions";
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -144,7 +139,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         const response = await editFlat(objFlat?._id, {
           flatName: data.flatName,
           flourId: id,
-          currentMember: data.currentMember,
+          currentMember: data.currentMember ? data.currentMember : null,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
@@ -160,7 +155,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         const response = await addFlat({
           flatName: data.flatName,
           flourId: id,
-          currentMember: data.currentMember,
+          currentMember: data.currentMember ? data.currentMember : null,
         });
         if (response.data.status === true) {
           showSuccess(response?.data?.message);
@@ -191,7 +186,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     if (objFlat && isEdit) {
       reset({
         flatName: objFlat?.flatName,
-        currentMember: objFlat?.currentMember,
+        currentMember: objFlat?.currentMember?._id,
       });
     }
   }, [isEdit, objFlat]);
